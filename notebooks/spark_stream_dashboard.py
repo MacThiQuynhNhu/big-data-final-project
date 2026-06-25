@@ -62,6 +62,8 @@ def xu_ly_batch(batch_df, batch_id):
 
 query = (txn.writeStream
          .foreachBatch(xu_ly_batch)
+         # checkpoint: lưu vị trí đọc Kafka -> restart là tiếp tục đúng chỗ (chịu lỗi)
+         .option("checkpointLocation", "file:///home/hduser/chk_dashboard")
          .outputMode("append")
          .trigger(processingTime="5 seconds")     # mỗi 5 giây 1 điểm dữ liệu
          .start())

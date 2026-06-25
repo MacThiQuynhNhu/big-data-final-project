@@ -48,6 +48,8 @@ query = (alerts.writeStream
          .outputMode("append")
          .format("console")
          .option("truncate", False)
+         # checkpoint: chịu lỗi, restart tiếp tục đúng vị trí đọc Kafka
+         .option("checkpointLocation", "file:///home/hduser/chk_alert")
          .start())
 
 print(">>> Đang lắng nghe Kafka... bơm 1 giao dịch lỗ vào topic để thấy cảnh báo <<<")
