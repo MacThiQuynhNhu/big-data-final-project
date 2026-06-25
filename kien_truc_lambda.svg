@@ -1,0 +1,51 @@
+<svg width="100%" viewBox="0 0 680 490" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>Kiến trúc Lambda: batch và streaming</title>
+<desc>NiFi thu thập 4 nguồn rồi tách hai nhánh: nhánh tốc độ qua Kafka và Spark Streaming cho real-time, nhánh batch qua HDFS, Hive, Spark SQL và MLlib cho báo cáo định kỳ.</desc>
+<defs>
+<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+<style>
+text{font-family:'Segoe UI',Arial,sans-serif}
+.th{font-size:14px;font-weight:500}.ts{font-size:12px}
+.arr{stroke:#888780;stroke-width:1.5;fill:none}
+.gray rect{fill:#F1EFE8;stroke:#5F5E5A}.gray .th{fill:#2C2C2A}.gray .ts{fill:#5F5E5A}
+.coral rect{fill:#FAECE7;stroke:#993C1D}.coral .th{fill:#4A1B0C}.coral .ts{fill:#993C1D}
+.teal rect{fill:#E1F5EE;stroke:#0F6E56}.teal .th{fill:#04342C}.teal .ts{fill:#0F6E56}
+.purple rect{fill:#EEEDFE;stroke:#534AB7}.purple .th{fill:#26215C}.purple .ts{fill:#534AB7}
+.green rect{fill:#EAF3DE;stroke:#3B6D11}.green .th{fill:#173404}.green .ts{fill:#3B6D11}
+</style>
+</defs>
+
+<g class="gray"><rect x="40" y="45" width="140" height="44" rx="8" stroke-width="0.5"/><text class="th" x="110" y="63" text-anchor="middle" dominant-baseline="central">POS</text><text class="ts" x="110" y="79" text-anchor="middle" dominant-baseline="central">file · JSON</text></g>
+<g class="gray"><rect x="193" y="45" width="140" height="44" rx="8" stroke-width="0.5"/><text class="th" x="263" y="63" text-anchor="middle" dominant-baseline="central">ERP</text><text class="ts" x="263" y="79" text-anchor="middle" dominant-baseline="central">database</text></g>
+<g class="gray"><rect x="346" y="45" width="140" height="44" rx="8" stroke-width="0.5"/><text class="th" x="416" y="63" text-anchor="middle" dominant-baseline="central">Kho</text><text class="ts" x="416" y="79" text-anchor="middle" dominant-baseline="central">Excel</text></g>
+<g class="gray"><rect x="499" y="45" width="140" height="44" rx="8" stroke-width="0.5"/><text class="th" x="569" y="63" text-anchor="middle" dominant-baseline="central">CRM</text><text class="ts" x="569" y="79" text-anchor="middle" dominant-baseline="central">API</text></g>
+
+<line x1="110" y1="89" x2="110" y2="118" class="arr" marker-end="url(#arrow)"/>
+<line x1="263" y1="89" x2="263" y2="118" class="arr" marker-end="url(#arrow)"/>
+<line x1="416" y1="89" x2="416" y2="118" class="arr" marker-end="url(#arrow)"/>
+<line x1="569" y1="89" x2="569" y2="118" class="arr" marker-end="url(#arrow)"/>
+
+<g class="coral"><rect x="40" y="120" width="600" height="46" rx="8" stroke-width="0.5"/><text class="th" x="340" y="138" text-anchor="middle" dominant-baseline="central">Apache NiFi</text><text class="ts" x="340" y="155" text-anchor="middle" dominant-baseline="central">thu thập · làm sạch · ConvertRecord · gắn nguồn</text></g>
+
+<rect x="35" y="190" width="290" height="212" rx="10" fill="none" stroke="#993C1D" stroke-width="1" stroke-dasharray="5 4"/>
+<text class="ts" x="50" y="205" fill="#993C1D">Nhánh tốc độ · real-time (speed)</text>
+<rect x="355" y="190" width="290" height="282" rx="10" fill="none" stroke="#534AB7" stroke-width="1" stroke-dasharray="5 4"/>
+<text class="ts" x="370" y="205" fill="#534AB7">Nhánh batch · báo cáo định kỳ</text>
+
+<line x1="170" y1="166" x2="170" y2="214" class="arr" marker-end="url(#arrow)"/>
+<line x1="510" y1="166" x2="510" y2="214" class="arr" marker-end="url(#arrow)"/>
+
+<g class="coral"><rect x="55" y="216" width="230" height="44" rx="8" stroke-width="0.5"/><text class="th" x="170" y="234" text-anchor="middle" dominant-baseline="central">Kafka</text><text class="ts" x="170" y="250" text-anchor="middle" dominant-baseline="central">sales-report-clean</text></g>
+<line x1="170" y1="260" x2="170" y2="284" class="arr" marker-end="url(#arrow)"/>
+<g class="teal"><rect x="55" y="286" width="230" height="44" rx="8" stroke-width="0.5"/><text class="th" x="170" y="304" text-anchor="middle" dominant-baseline="central">Spark Streaming</text><text class="ts" x="170" y="320" text-anchor="middle" dominant-baseline="central">xử lý tức thì</text></g>
+<line x1="170" y1="330" x2="170" y2="354" class="arr" marker-end="url(#arrow)"/>
+<g class="green"><rect x="55" y="356" width="230" height="44" rx="8" stroke-width="0.5"/><text class="th" x="170" y="374" text-anchor="middle" dominant-baseline="central">Dashboard real-time</text><text class="ts" x="170" y="390" text-anchor="middle" dominant-baseline="central">giám sát · cảnh báo</text></g>
+
+<g class="gray"><rect x="395" y="216" width="230" height="44" rx="8" stroke-width="0.5"/><text class="th" x="510" y="234" text-anchor="middle" dominant-baseline="central">HDFS /clean</text><text class="ts" x="510" y="250" text-anchor="middle" dominant-baseline="central">pos · erp · kho · crm</text></g>
+<line x1="510" y1="260" x2="510" y2="284" class="arr" marker-end="url(#arrow)"/>
+<g class="purple"><rect x="395" y="286" width="230" height="44" rx="8" stroke-width="0.5"/><text class="th" x="510" y="304" text-anchor="middle" dominant-baseline="central">Hive — bao_cao</text><text class="ts" x="510" y="320" text-anchor="middle" dominant-baseline="central">bảng phân vùng nguồn/tháng</text></g>
+<line x1="510" y1="330" x2="510" y2="354" class="arr" marker-end="url(#arrow)"/>
+<g class="teal"><rect x="395" y="356" width="230" height="44" rx="8" stroke-width="0.5"/><text class="th" x="510" y="374" text-anchor="middle" dominant-baseline="central">Spark SQL + MLlib</text><text class="ts" x="510" y="390" text-anchor="middle" dominant-baseline="central">tổng hợp · dự báo · phân cụm</text></g>
+<line x1="510" y1="400" x2="510" y2="424" class="arr" marker-end="url(#arrow)"/>
+<g class="green"><rect x="395" y="426" width="230" height="44" rx="8" stroke-width="0.5"/><text class="th" x="510" y="444" text-anchor="middle" dominant-baseline="central">Báo cáo định kỳ</text><text class="ts" x="510" y="460" text-anchor="middle" dominant-baseline="central">doanh thu · chi phí · tồn kho</text></g>
+</svg>

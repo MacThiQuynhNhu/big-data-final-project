@@ -19,7 +19,7 @@ tích bằng **Spark SQL** và **Spark MLlib** trên cụm Hadoop 3 node.
 - **Nhánh tốc độ**: giao dịch đẩy qua Kafka → Spark Structured Streaming phát hiện đơn
   lỗ nặng và cảnh báo tức thì.
 
-Sơ đồ chi tiết: `kien_truc_lambda.svg`, `pipeline_hien_tai.svg`.
+Sơ đồ chi tiết: `kien_truc_lambda.svg` (xem `kien_truc_lambda.png`).
 
 ## Công nghệ
 
@@ -59,9 +59,7 @@ Dùng dataset **Superstore** (Kaggle, ~9994 giao dịch thật), tách thành 4 
 │   ├── spark_analysis.py        # Spark MLlib: dự báo (LinearRegression), phân cụm (KMeans)
 │   └── spark_stream_alert.py    # Spark Streaming: cảnh báo giao dịch lỗ real-time
 ├── HUONG_DAN_VM.md              # dựng cụm Hadoop 3 node trên VMware
-├── HUONG_DAN_THUC_HIEN.md       # lộ trình thực hiện tổng thể
-├── docker-compose*.yml          # phương án thay thế chạy bằng Docker
-└── *.svg / *.png                # sơ đồ kiến trúc
+└── kien_truc_lambda.svg/.png    # sơ đồ kiến trúc
 ```
 
 ## Cách chạy
@@ -75,7 +73,7 @@ python prepare_from_kaggle.py        # tạo 4 nguồn trong data/
 ```
 
 ### 2. Dựng cụm Hadoop + cài NiFi/Kafka/Postgres
-Xem `HUONG_DAN_VM.md` (cụm 3 node) và lộ trình trong `HUONG_DAN_THUC_HIEN.md`.
+Xem `HUONG_DAN_VM.md` — hướng dẫn dựng cụm Hadoop 3 node + cài NiFi/Kafka/Postgres.
 
 ### 3. Thu thập (NiFi)
 Dựng flow NiFi 4 nhánh: thu thập → ReplaceText (làm sạch) → ConvertRecord (chuẩn schema)
