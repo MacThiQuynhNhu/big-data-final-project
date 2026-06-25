@@ -12,8 +12,6 @@ from pyspark.sql import functions as F
 spark = (SparkSession.builder
          .appName("nap-hive-tu-hdfs")
          .config("spark.sql.warehouse.dir", "hdfs://master:9000/user/hive/warehouse")
-         # cho phép ghi đè bảng dù thư mục HDFS đã tồn tại (tránh lỗi location already exists)
-         .config("spark.sql.legacy.allowCreatingManagedTableUsingNonemptyLocation", "true")
          .enableHiveSupport()
          .getOrCreate())
 spark.sparkContext.setLogLevel("WARN")
