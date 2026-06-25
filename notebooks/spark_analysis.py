@@ -53,6 +53,11 @@ pred = model.predict(asm.transform(
     spark.createDataFrame([(next_t,)], ["t"])).head().features)
 print("Hệ số:", model.coefficients, "| Chặn:", round(model.intercept, 1))
 print(f"Dự báo doanh thu tháng kế tiếp (t={next_t}):", round(pred, 0))
+# Lưu dự báo vào Hive
+(spark.createDataFrame([(int(next_t), float(round(pred, 0)))],
+                       ["thang_t", "doanh_thu_dubao"])
+      .write.mode("overwrite").format("parquet").saveAsTable("bao_cao.bc_dubao"))
+print("   -> đã lưu bảng bao_cao.bc_dubao")
 
 # ============================================================
 # 2. KMeans — phân cụm cửa hàng theo hành vi (chuẩn hóa đặc trưng)
@@ -70,13 +75,15 @@ scaler = StandardScaler(inputCol="raw", outputCol="features",
 km_data = scaler.fit(va.transform(store_feat)).transform(va.transform(store_feat))
 km = KMeans(k=3, seed=42).fit(km_data)
 
+phancum = (km.transform(km_data)
+           .select("store_id", "revenue", "n_txn", "prediction"))
 print("== Phân cụm cửa hàng (đã chuẩn hóa) ==")
-(km.transform(km_data)
-   .select("store_id", "revenue", "n_txn", "prediction")
-   .orderBy("prediction", F.col("revenue").desc())
-   .show(50))
+phancum.orderBy("prediction", F.col("revenue").desc()).show(50)
 print("Số cửa hàng mỗi cụm:")
-km.transform(km_data).groupBy("prediction").count().orderBy("prediction").show()
+phancum.groupBy("prediction").count().orderBy("prediction").show()
+# Lưu kết quả phân cụm vào Hive
+phancum.write.mode("overwrite").format("parquet").saveAsTable("bao_cao.bc_phancum_cuahang")
+print("   -> đã lưu bảng bao_cao.bc_phancum_cuahang")
 
 # ============================================================
 # 3. Tương quan KHUYẾN MÃI vs LỢI NHUẬN (gộp POS + ERP qua txn_id)
@@ -87,7 +94,12 @@ joined = spark.sql("""
     JOIN sales_report e ON p.txn_id = e.txn_id
     WHERE p.source = 'pos' AND e.source = 'erp' AND e.cost IS NOT NULL
 """)
-print("Tương quan khuyến mãi vs lợi nhuận:",
-      round(joined.stat.corr("promotion", "profit"), 4))
+corr_val = round(joined.stat.corr("promotion", "profit"), 4)
+print("Tương quan khuyến mãi vs lợi nhuận:", corr_val)
+# Lưu tương quan vào Hive
+(spark.createDataFrame([("khuyen_mai_vs_loi_nhuan", float(corr_val))],
+                       ["chi_tieu", "gia_tri"])
+      .write.mode("overwrite").format("parquet").saveAsTable("bao_cao.bc_tuongquan"))
+print("   -> đã lưu bảng bao_cao.bc_tuongquan")
 
 spark.stop()

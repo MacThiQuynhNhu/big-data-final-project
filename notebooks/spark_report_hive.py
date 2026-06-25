@@ -1,9 +1,11 @@
 """
-Spark SQL — tạo BÁO CÁO kinh doanh truy vấn TỪ HIVE (bảng phân vùng).
-Đúng yêu cầu thầy: "Spark SQL: doanh thu, hàng tồn, chi phí".
+Spark SQL — tạo BÁO CÁO từ Hive, vừa IN ra vừa GHI kết quả thành BẢNG HIVE.
+Đúng yêu cầu thầy: "Hive: lưu dữ liệu báo cáo".
+
+Sau khi chạy, xem lại báo cáo bất cứ lúc nào KHÔNG cần chạy lại Spark:
+  hive -e "SELECT * FROM bao_cao.bc_loinhuan_vung;"
 
 Chạy:
-  cd ~/big-data-final-project
   spark-submit --master yarn --deploy-mode client notebooks/spark_report_hive.py
 """
 from pyspark.sql import SparkSession
@@ -14,14 +16,19 @@ spark = (SparkSession.builder
          .enableHiveSupport()
          .getOrCreate())
 spark.sparkContext.setLogLevel("WARN")
-
 spark.sql("USE bao_cao")
 
-# ============================================================
-# 1. DOANH THU / CHI PHÍ / LỢI NHUẬN theo cửa hàng & tháng (ERP)
-# ============================================================
+
+def in_va_luu(df, ten_bang, so_dong=20):
+    """In ra màn hình rồi lưu thành bảng Hive bao_cao.<ten_bang>."""
+    df.show(so_dong)
+    df.write.mode("overwrite").format("parquet").saveAsTable(ten_bang)
+    print(f"   -> đã lưu bảng bao_cao.{ten_bang}\n")
+
+
+# 1. Doanh thu / chi phí / lợi nhuận theo cửa hàng & tháng
 print("== 1. Doanh thu / chi phí / lợi nhuận theo cửa hàng & tháng ==")
-spark.sql("""
+in_va_luu(spark.sql("""
     SELECT store_id, thang,
            ROUND(SUM(revenue), 0)        AS doanh_thu,
            ROUND(SUM(cost), 0)           AS chi_phi,
@@ -30,13 +37,11 @@ spark.sql("""
     WHERE source = 'erp' AND cost IS NOT NULL
     GROUP BY store_id, thang
     ORDER BY store_id, thang
-""").show(20)
+"""), "bc_doanhthu_cuahang")
 
-# ============================================================
-# 2. LỢI NHUẬN theo vùng (ERP)
-# ============================================================
+# 2. Lợi nhuận theo khu vực
 print("== 2. Lợi nhuận theo khu vực ==")
-spark.sql("""
+in_va_luu(spark.sql("""
     SELECT region,
            ROUND(SUM(revenue), 0)        AS doanh_thu,
            ROUND(SUM(revenue - cost), 0) AS loi_nhuan
@@ -44,13 +49,11 @@ spark.sql("""
     WHERE source = 'erp' AND cost IS NOT NULL
     GROUP BY region
     ORDER BY loi_nhuan DESC
-""").show()
+"""), "bc_loinhuan_vung")
 
-# ============================================================
-# 3. TOP sản phẩm bán chạy (POS)
-# ============================================================
+# 3. Top 10 sản phẩm bán chạy
 print("== 3. Top 10 sản phẩm bán chạy ==")
-spark.sql("""
+in_va_luu(spark.sql("""
     SELECT product_id,
            ROUND(SUM(revenue), 0) AS doanh_thu,
            COUNT(*)               AS so_lan_ban
@@ -59,26 +62,20 @@ spark.sql("""
     GROUP BY product_id
     ORDER BY doanh_thu DESC
     LIMIT 10
-""").show()
+"""), "bc_top_sanpham")
 
-# ============================================================
-# 4. HÀNG TỒN: sản phẩm dưới ngưỡng tái đặt (cảnh báo nhập hàng)
-# ============================================================
+# 4. Cảnh báo hàng tồn dưới ngưỡng tái đặt (lưu TẤT CẢ, in 15)
 print("== 4. Cảnh báo hàng tồn dưới ngưỡng tái đặt ==")
-spark.sql("""
+in_va_luu(spark.sql("""
     SELECT store_id, product_id, stock_qty, reorder_level
     FROM inventory
     WHERE stock_qty < reorder_level
     ORDER BY stock_qty
-    LIMIT 15
-""").show()
+"""), "bc_canhbao_tonkho", so_dong=15)
 
-# ============================================================
-# 5. GỘP ĐA NGUỒN: lợi nhuận theo sản phẩm (POS có product, ERP có cost)
-#    JOIN POS + ERP qua txn_id
-# ============================================================
-print("== 5. Lợi nhuận theo sản phẩm (gộp POS + ERP) ==")
-spark.sql("""
+# 5. Lợi nhuận theo sản phẩm (gộp POS + ERP qua txn_id)
+print("== 5. Lợi nhuận theo sản phẩm (gộp đa nguồn) ==")
+in_va_luu(spark.sql("""
     SELECT p.product_id,
            ROUND(SUM(e.revenue - e.cost), 0) AS loi_nhuan,
            COUNT(*)                          AS so_giao_dich
@@ -88,6 +85,9 @@ spark.sql("""
     GROUP BY p.product_id
     ORDER BY loi_nhuan DESC
     LIMIT 10
-""").show()
+"""), "bc_loinhuan_sanpham")
+
+print("== Các bảng báo cáo đã lưu trong Hive (database bao_cao) ==")
+spark.sql("SHOW TABLES IN bao_cao").show()
 
 spark.stop()
