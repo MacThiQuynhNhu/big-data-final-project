@@ -21,13 +21,14 @@ free -h
 ```bash
 PGPASSWORD=erp123 psql -h localhost -U erp -d erp <<'SQL'
 CREATE TABLE IF NOT EXISTS rt_thongke (
-  thoi_diem TIMESTAMP, doanh_thu DOUBLE PRECISION,
+  thoi_diem TIMESTAMPTZ, doanh_thu DOUBLE PRECISION,
   loi_nhuan DOUBLE PRECISION, so_gd INTEGER
 );
 CREATE TABLE IF NOT EXISTS rt_canhbao (
-  thoi_diem TIMESTAMP, txn_id TEXT, store_id TEXT, region TEXT,
+  thoi_diem TIMESTAMPTZ, txn_id TEXT, store_id TEXT, region TEXT,
   revenue DOUBLE PRECISION, cost DOUBLE PRECISION, profit DOUBLE PRECISION
 );
+-- Dùng TIMESTAMPTZ (có múi giờ) để Grafana hiển thị đúng real-time, tránh lệch giờ
 SQL
 ```
 
