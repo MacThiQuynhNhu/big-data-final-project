@@ -54,7 +54,7 @@ Dùng dataset **Superstore** (Kaggle, ~9994 giao dịch thật), tách thành 4 
 │   ├── inspect_data.py          # soi nhanh / thống kê data
 │   └── load_erp.py              # nạp ERP vào PostgreSQL
 ├── notebooks/
-│   ├── spark_kafka_to_hive.py   # Kafka + HDFS → Hive (bảng phân vùng)
+│   ├── spark_to_hive.py         # HDFS → Hive (bảng phân vùng) — nhánh batch
 │   ├── spark_report_hive.py     # Hive → báo cáo SQL (doanh thu/chi phí/tồn kho)
 │   ├── spark_analysis.py        # Spark MLlib: dự báo (LinearRegression), phân cụm (KMeans)
 │   └── spark_stream_alert.py    # Spark Streaming: cảnh báo giao dịch lỗ real-time
@@ -81,10 +81,8 @@ Dựng flow NiFi 4 nhánh: thu thập → ReplaceText (làm sạch) → ConvertR
 
 ### 4. Batch: nạp Hive + báo cáo
 ```bash
-# Kafka + HDFS → Hive
-spark-submit --master local[2] \
-  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.1 \
-  notebooks/spark_kafka_to_hive.py
+# HDFS → Hive (nhánh batch)
+spark-submit --master yarn notebooks/spark_to_hive.py
 # Hive → báo cáo
 spark-submit --master yarn notebooks/spark_report_hive.py
 # MLlib
