@@ -1,0 +1,20 @@
+# Dữ liệu sinh/tải (tạo lại bằng prepare_from_kaggle.py)
+data/
+
+# Spark / Hive artifacts
+metastore_db/
+derby.log
+spark-warehouse/
+
+# Python
+__pycache__/
+*.pyc
+
+# Gói tải về
+*.tar.gz
+*.tgz
+*.jar
+
+# Kết quả chạy
+ketqua*.txt
+*.log
