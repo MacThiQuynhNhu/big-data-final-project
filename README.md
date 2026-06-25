@@ -59,6 +59,7 @@ Dùng dataset **Superstore** (Kaggle, ~9994 giao dịch thật), tách thành 4 
 │   ├── spark_analysis.py        # Spark MLlib: dự báo (LinearRegression), phân cụm (KMeans)
 │   └── spark_stream_alert.py    # Spark Streaming: cảnh báo giao dịch lỗ real-time
 ├── HUONG_DAN_VM.md              # dựng cụm Hadoop 3 node trên VMware
+├── HUONG_DAN_CHAY_BATCH.md      # runbook chạy luồng batch (clear + chạy lại từ đầu)
 └── kien_truc_lambda.svg/.png    # sơ đồ kiến trúc
 ```
 
