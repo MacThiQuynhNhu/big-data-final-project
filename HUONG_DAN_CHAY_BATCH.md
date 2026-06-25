@@ -40,8 +40,6 @@ bin/kafka-topics.sh --create --topic sales-report-clean --bootstrap-server local
 rm -rf ~/big-data-final-project/metastore_db ~/big-data-final-project/derby.log
 rm -f ~/nifi_input/*
 ```
-> Giữ nguyên `/input/erp_sales.csv` (MLlib dùng). Kiểm: `hdfs dfs -ls /input`
-> — thiếu thì `hdfs dfs -put ~/big-data-final-project/data/erp_sales.csv /input/`.
 
 ## Bước 3 — Thu thập lại (NiFi 4 nguồn)
 Vào NiFi UI `https://192.168.79.131:8443/nifi` → **Start tất cả processor** (Ctrl+A → ▶).
@@ -80,8 +78,9 @@ spark-submit --master yarn notebooks/spark_to_hive.py 2>&1 | tee ~/ketqua_hive.t
 ## Bước 6 — Báo cáo + MLlib
 ```bash
 spark-submit --master yarn notebooks/spark_report_hive.py 2>&1 | tee ~/ketqua_baocao.txt
-DATA_DIR=hdfs://master:9000/input spark-submit --master yarn notebooks/spark_analysis.py 2>&1 | tee ~/ketqua_mllib.txt
+spark-submit --master yarn notebooks/spark_analysis.py 2>&1 | tee ~/ketqua_mllib.txt
 ```
+> Cả hai đọc từ Hive (`bao_cao`). `spark_report_hive` = báo cáo SQL, `spark_analysis` = MLlib.
 ✅ Đậu khi: 5 báo cáo ra số (doanh thu/chi phí/lợi nhuận, vùng, top sản phẩm, tồn kho, gộp đa nguồn)
 + MLlib ra dự báo doanh thu, phân cụm cửa hàng.
 

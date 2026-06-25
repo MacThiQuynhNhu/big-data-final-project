@@ -86,8 +86,8 @@ Dựng flow NiFi 4 nhánh: thu thập → ReplaceText (làm sạch) → ConvertR
 spark-submit --master yarn notebooks/spark_to_hive.py
 # Hive → báo cáo
 spark-submit --master yarn notebooks/spark_report_hive.py
-# MLlib
-DATA_DIR=hdfs://master:9000/input spark-submit --master yarn notebooks/spark_analysis.py
+# MLlib (đọc từ Hive)
+spark-submit --master yarn notebooks/spark_analysis.py
 ```
 
 ### 5. Streaming: cảnh báo real-time
