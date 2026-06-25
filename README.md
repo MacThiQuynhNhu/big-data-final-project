@@ -52,14 +52,17 @@ Dùng dataset **Superstore** (Kaggle, ~9994 giao dịch thật), tách thành 4 
 ├── data_generator/
 │   ├── prepare_from_kaggle.py   # tạo 4 nguồn từ Superstore
 │   ├── inspect_data.py          # soi nhanh / thống kê data
-│   └── load_erp.py              # nạp ERP vào PostgreSQL
+│   ├── load_erp.py              # nạp ERP vào PostgreSQL
+│   └── stream_producer.py       # sinh giao dịch liên tục → Kafka (cho dashboard)
 ├── notebooks/
 │   ├── spark_to_hive.py         # HDFS → Hive (bảng phân vùng) — nhánh batch
 │   ├── spark_report_hive.py     # Hive → báo cáo SQL (doanh thu/chi phí/tồn kho)
 │   ├── spark_analysis.py        # Spark MLlib: dự báo (LinearRegression), phân cụm (KMeans)
-│   └── spark_stream_alert.py    # Spark Streaming: cảnh báo giao dịch lỗ real-time
+│   ├── spark_stream_alert.py    # Spark Streaming: cảnh báo giao dịch lỗ real-time
+│   └── spark_stream_dashboard.py # Spark Streaming → PostgreSQL (cho Grafana)
 ├── HUONG_DAN_VM.md              # dựng cụm Hadoop 3 node trên VMware
 ├── HUONG_DAN_CHAY_BATCH.md      # runbook chạy luồng batch (clear + chạy lại từ đầu)
+├── HUONG_DAN_DASHBOARD.md       # runbook dashboard real-time (Grafana)
 └── kien_truc_lambda.svg/.png    # sơ đồ kiến trúc
 ```
 
