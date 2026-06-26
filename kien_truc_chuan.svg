@@ -16,13 +16,13 @@ text{font-family:'Segoe UI',Arial,sans-serif}
 </style>
 </defs>
 
-<g class="gray"><rect x="170" y="36" width="340" height="40" rx="8" stroke-width="0.5"/><text class="th" x="340" y="52" text-anchor="middle" dominant-baseline="central">Nguồn dữ liệu</text><text class="ts" x="340" y="67" text-anchor="middle" dominant-baseline="central">POS · ERP · CRM · Kho (file/DB/API/Excel)</text></g>
-<line x1="340" y1="76" x2="340" y2="90" class="arr" marker-end="url(#arrow)"/>
+<g class="gray"><rect x="120" y="34" width="440" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="50" text-anchor="middle" dominant-baseline="central">Nguồn dữ liệu — 5 hệ thống (omnichannel)</text><text class="ts" x="340" y="67" text-anchor="middle" dominant-baseline="central">OFFLINE: POS(api,hóa đơn)·ERP(db) — ONLINE: E-commerce(db) — Kho tổng(db)·CRM(api)</text></g>
+<line x1="340" y1="78" x2="340" y2="90" class="arr" marker-end="url(#arrow)"/>
 
-<g class="coral"><rect x="140" y="92" width="400" height="40" rx="8" stroke-width="0.5"/><text class="th" x="340" y="108" text-anchor="middle" dominant-baseline="central">Apache NiFi</text><text class="ts" x="340" y="123" text-anchor="middle" dominant-baseline="central">thu thập · làm sạch · chuẩn schema</text></g>
+<g class="coral"><rect x="140" y="92" width="400" height="40" rx="8" stroke-width="0.5"/><text class="th" x="340" y="108" text-anchor="middle" dominant-baseline="central">Apache NiFi</text><text class="ts" x="340" y="123" text-anchor="middle" dominant-baseline="central">thu thập · làm sạch · tách dòng hóa đơn (Jolt)</text></g>
 <line x1="340" y1="132" x2="340" y2="146" class="arr" marker-end="url(#arrow)"/>
 
-<g class="coral"><rect x="140" y="148" width="400" height="42" rx="8" stroke-width="0.5"/><text class="th" x="340" y="165" text-anchor="middle" dominant-baseline="central">Apache Kafka — Event Bus</text><text class="ts" x="340" y="181" text-anchor="middle" dominant-baseline="central">đệm bền vững · phân phối nhiều consumer</text></g>
+<g class="coral"><rect x="140" y="148" width="400" height="42" rx="8" stroke-width="0.5"/><text class="th" x="340" y="165" text-anchor="middle" dominant-baseline="central">Apache Kafka — Event Bus</text><text class="ts" x="340" y="181" text-anchor="middle" dominant-baseline="central">topic: sales-report-clean · inventory-events</text></g>
 <line x1="265" y1="190" x2="150" y2="213" class="arr" marker-end="url(#arrow)"/>
 <line x1="415" y1="190" x2="445" y2="213" class="arr" marker-end="url(#arrow)"/>
 
@@ -31,11 +31,11 @@ text{font-family:'Segoe UI',Arial,sans-serif}
 
 <g class="teal"><rect x="25" y="216" width="210" height="44" rx="8" stroke-width="0.5"/><text class="th" x="130" y="233" text-anchor="middle" dominant-baseline="central">Spark Streaming</text><text class="ts" x="130" y="249" text-anchor="middle" dominant-baseline="central">xử lý real-time</text></g>
 <line x1="130" y1="260" x2="130" y2="274" class="arr" marker-end="url(#arrow)"/>
-<g class="gray"><rect x="25" y="276" width="210" height="44" rx="8" stroke-width="0.5"/><text class="th" x="130" y="293" text-anchor="middle" dominant-baseline="central">PostgreSQL</text><text class="ts" x="130" y="309" text-anchor="middle" dominant-baseline="central">metric real-time</text></g>
+<g class="gray"><rect x="25" y="276" width="210" height="44" rx="8" stroke-width="0.5"/><text class="th" x="130" y="293" text-anchor="middle" dominant-baseline="central">PostgreSQL</text><text class="ts" x="130" y="309" text-anchor="middle" dominant-baseline="central">rt_thongke · rt_canhbao</text></g>
 
-<g class="gray"><rect x="335" y="216" width="230" height="42" rx="8" stroke-width="0.5"/><text class="th" x="450" y="232" text-anchor="middle" dominant-baseline="central">HDFS — Data Lake</text><text class="ts" x="450" y="248" text-anchor="middle" dominant-baseline="central">dữ liệu thô (qua ConsumeKafka)</text></g>
+<g class="gray"><rect x="335" y="216" width="230" height="42" rx="8" stroke-width="0.5"/><text class="th" x="450" y="232" text-anchor="middle" dominant-baseline="central">HDFS — Data Lake</text><text class="ts" x="450" y="248" text-anchor="middle" dominant-baseline="central">/lake/transactions · /lake/inventory</text></g>
 <line x1="450" y1="258" x2="450" y2="272" class="arr" marker-end="url(#arrow)"/>
-<g class="purple"><rect x="335" y="274" width="230" height="42" rx="8" stroke-width="0.5"/><text class="th" x="450" y="290" text-anchor="middle" dominant-baseline="central">Hive — bảng chi tiết</text><text class="ts" x="450" y="306" text-anchor="middle" dominant-baseline="central">fact / dim (Star Schema)</text></g>
+<g class="purple"><rect x="335" y="274" width="230" height="42" rx="8" stroke-width="0.5"/><text class="th" x="450" y="290" text-anchor="middle" dominant-baseline="central">Hive — bảng chi tiết</text><text class="ts" x="450" y="306" text-anchor="middle" dominant-baseline="central">sales_report · inventory · dim_*</text></g>
 <line x1="450" y1="316" x2="450" y2="330" class="arr" marker-end="url(#arrow)"/>
 <g class="teal"><rect x="335" y="332" width="230" height="42" rx="8" stroke-width="0.5"/><text class="th" x="450" y="348" text-anchor="middle" dominant-baseline="central">Spark SQL + MLlib</text><text class="ts" x="450" y="364" text-anchor="middle" dominant-baseline="central">phân tích · dự báo · phân cụm</text></g>
 <line x1="450" y1="374" x2="450" y2="388" class="arr" marker-end="url(#arrow)"/>
@@ -47,4 +47,7 @@ text{font-family:'Segoe UI',Arial,sans-serif}
 <g class="green"><rect x="170" y="456" width="340" height="44" rx="8" stroke-width="0.5"/><text class="th" x="340" y="473" text-anchor="middle" dominant-baseline="central">Dashboard / BI (Grafana)</text><text class="ts" x="340" y="489" text-anchor="middle" dominant-baseline="central">gộp real-time + báo cáo batch</text></g>
 <line x1="130" y1="320" x2="275" y2="454" class="arr" marker-end="url(#arrow)"/>
 <line x1="450" y1="432" x2="400" y2="454" class="arr" marker-end="url(#arrow)"/>
+
+<g class="amber"><rect x="25" y="350" width="210" height="48" rx="8" stroke-width="0.5"/><text class="th" x="130" y="367" text-anchor="middle" dominant-baseline="central">san_pham — giá vốn (dim)</text><text class="ts" x="130" y="384" text-anchor="middle" dominant-baseline="central">nối KHO ↔ TÀI CHÍNH (COGS)</text></g>
+<line x1="235" y1="368" x2="333" y2="300" stroke="#BA7517" stroke-width="1" stroke-dasharray="4 3" fill="none" marker-end="url(#arrow)"/>
 </svg>

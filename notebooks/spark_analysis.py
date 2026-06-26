@@ -65,7 +65,7 @@ print("   -> đã lưu bảng bao_cao.bc_dubao")
 from pyspark.ml.feature import VectorAssembler as VA2, StandardScaler
 from pyspark.ml.clustering import KMeans
 
-store_feat = erp.groupBy("store_id").agg(
+store_feat = erp.where(F.col("store_id").isNotNull()).groupBy("store_id").agg(
     F.sum("revenue").alias("revenue"),
     F.avg("revenue").alias("avg_rev"),
     F.count("*").alias("n_txn"))
@@ -101,5 +101,35 @@ print("Tương quan khuyến mãi vs lợi nhuận:", corr_val)
                        ["chi_tieu", "gia_tri"])
       .write.mode("overwrite").format("parquet").saveAsTable("bao_cao.bc_tuongquan"))
 print("   -> đã lưu bảng bao_cao.bc_tuongquan")
+
+# ============================================================
+# 4. DỰ BÁO NHU CẦU -> KẾ HOẠCH NHẬP HÀNG (khép vòng bán → kho → tài chính)
+#    Bán nhiều (ERP cả 2 kênh) -> dự báo nhu cầu/tháng -> so tồn kho -> đề xuất nhập + chi phí.
+#    Dự báo = nhu cầu trung bình tháng (moving average) ; tồn dự trữ mục tiêu = 1.5 tháng bán.
+# ============================================================
+print("== 4. Dự báo nhu cầu & KẾ HOẠCH NHẬP HÀNG ==")
+ke_hoach = spark.sql("""
+    WITH nhu_cau AS (
+        SELECT product_id, ROUND(AVG(qty_thang), 1) AS du_bao_thang
+        FROM (SELECT product_id, thang, SUM(qty) AS qty_thang
+              FROM sales_report WHERE source = 'erp'
+              GROUP BY product_id, thang)
+        GROUP BY product_id
+    )
+    SELECT n.product_id, s.ten_sp,
+           n.du_bao_thang,                                   -- dự báo bán/tháng
+           i.stock_qty                                  AS ton_hien_tai,
+           s.reorder_level,
+           GREATEST(0, CEIL(n.du_bao_thang * 1.5 - i.stock_qty)) AS de_xuat_nhap,
+           ROUND(GREATEST(0, n.du_bao_thang * 1.5 - i.stock_qty) * s.unit_cost, 0)
+                                                        AS chi_phi_nhap_du_kien
+    FROM nhu_cau n
+    JOIN dim_sanpham s ON n.product_id = s.product_id
+    JOIN inventory  i ON n.product_id = i.product_id
+    ORDER BY de_xuat_nhap DESC
+""")
+ke_hoach.show(20, truncate=False)
+ke_hoach.write.mode("overwrite").format("parquet").saveAsTable("bao_cao.bc_kehoach_nhaphang")
+print("   -> đã lưu bảng bao_cao.bc_kehoach_nhaphang")
 
 spark.stop()

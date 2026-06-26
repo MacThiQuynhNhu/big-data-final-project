@@ -288,24 +288,20 @@ scp -r data hadoop@192.168.220.10:/home/hadoop/
 scp notebooks/spark_analysis.py hadoop@192.168.220.10:/home/hadoop/
 ```
 
-### 6.2 Cài pyspark phụ thuộc? Không cần — dùng spark-submit của cụm.
-Trên master, nạp dữ liệu vào HDFS:
-```bash
-hdfs dfs -mkdir -p /input
-hdfs dfs -put -f /home/hadoop/data/erp_sales.csv /input/
-hdfs dfs -ls /input
-```
+### 6.2 Dữ liệu đến từ đâu?
+KHÔNG còn nạp file CSV tĩnh. Dữ liệu do `data_generator/source_feeder.py` sinh LIVE cho
+cả 5 nguồn → NiFi → Kafka → HDFS `/lake` → Hive. Các job Spark (`spark_to_hive.py`,
+`spark_report_hive.py`, `spark_analysis.py`) đều đọc từ **Hive** (`bao_cao`), không đọc CSV.
 
-### 6.3 Chạy job Spark trên YARN (đọc HDFS)
+### 6.3 Chạy luồng batch trên YARN
+Theo `HUONG_DAN_CHAY_BATCH.md` (đầy đủ thứ tự bật service + thu thập + nạp Hive + báo cáo):
 ```bash
-DATA_DIR=hdfs://master:9000/input \
-spark-submit --master yarn --deploy-mode client \
-  /home/hadoop/spark_analysis.py
+psql -U erp -d erp -f data_generator/setup_db.sql        # bảng nguồn (1 lần)
+python3 data_generator/source_feeder.py &               # đổ dữ liệu live
+# ... NiFi thu thập → /lake ... rồi:
+spark-submit --master yarn --deploy-mode client notebooks/spark_to_hive.py
+spark-submit --master yarn --deploy-mode client notebooks/spark_analysis.py
 ```
-> Lưu ý: `spark_analysis.py` đang để chế độ A đọc `{DATA}/erp_sales.csv`.
-> Biến `DATA_DIR=hdfs://master:9000/input` ở trên sẽ trỏ Spark đọc từ HDFS.
-> Nếu gặp lỗi tải gói Kafka, tạm xóa dòng `.config("spark.jars.packages", ...)`
-> trong script (phần đọc CSV/HDFS không cần Kafka).
 
 Theo dõi job tại YARN UI (8088) → thấy application chạy phân tán trên 2 node.
 

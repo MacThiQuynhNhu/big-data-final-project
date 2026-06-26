@@ -1,19 +1,21 @@
 # Hướng dẫn dashboard real-time (Grafana)
 
 Mô phỏng hệ thống thật: dữ liệu chảy liên tục → xử lý real-time → dashboard live.
+Dùng CHUNG một nguồn với batch — `source_feeder` đổ giao dịch, NiFi đẩy vào Kafka:
 ```
-stream_producer.py → Kafka → spark_stream_dashboard.py → PostgreSQL → Grafana
+source_feeder.py → NiFi (PublishKafka) → Kafka → spark_stream_dashboard.py → PostgreSQL → Grafana
 ```
 
-## Bước 0 — Dồn RAM (chỉ cần Kafka + Postgres + Spark local + Grafana)
-Streaming dùng Spark local, KHÔNG cần YARN/HDFS/NiFi. Có thể tắt slave luôn.
+## Bước 0 — Dồn RAM (Kafka + Postgres + NiFi + Spark local + Grafana)
+Streaming dùng Spark local, KHÔNG cần YARN/HDFS (có thể tắt slave). Cần NiFi để đẩy
+giao dịch từ nguồn vào Kafka (chỉ bật nhánh PublishKafka, PutHDFS có thể để Stop).
 ```bash
 stop-yarn.sh 2>/dev/null
-~/nifi-1.28.1/bin/nifi.sh stop 2>/dev/null
-# Giữ: Kafka, PostgreSQL
+# Giữ: Kafka, PostgreSQL, NiFi
 sudo systemctl start postgresql
 ~/kafka_2.13-3.7.1/bin/kafka-server-start.sh -daemon ~/kafka_2.13-3.7.1/config/kraft/server.properties
 sleep 5
+~/nifi-1.28.1/bin/nifi.sh start          # đợi ~2 phút
 free -h
 ```
 
@@ -32,10 +34,11 @@ CREATE TABLE IF NOT EXISTS rt_canhbao (
 SQL
 ```
 
-## Bước 2 — Cài thư viện cho producer
+## Bước 2 — Chuẩn bị
 ```bash
-pip3 install kafka-python
+pip3 install psycopg2-binary    # cho source_feeder
 ls ~/postgresql-42.7.3.jar      # driver Postgres cho Spark (đã tải lúc làm NiFi)
+psql -U erp -d erp -f ~/big-data-final-project/data_generator/setup_db.sql   # bảng nguồn
 ```
 
 ## Bước 3 — Cài Grafana (1 lần)
@@ -60,12 +63,15 @@ spark-submit --master local[2] \
   notebooks/spark_stream_dashboard.py
 ```
 
-**Terminal 2 — Producer bắn giao dịch liên tục:**
+**Terminal 2 — Feeder đổ giao dịch (qua NiFi → Kafka):**
 ```bash
-cd ~/big-data-final-project/data_generator
-python3 stream_producer.py
+# Đảm bảo NiFi đã Start các processor nhánh PublishKafka (POS/ERP)
+cd ~/big-data-final-project
+python3 data_generator/source_feeder.py
 ```
-→ Dữ liệu chảy: producer → Kafka → Spark → Postgres mỗi 5 giây.
+→ Dữ liệu chảy: source_feeder → NiFi → Kafka → Spark → Postgres mỗi 5 giây.
+> Muốn test nhanh KHÔNG cần NiFi: bơm 1 giao dịch thẳng vào Kafka bằng
+> `kafka-console-producer.sh ... --topic sales-report-clean` (xem README mục 5).
 
 Kiểm tra Postgres có dữ liệu:
 ```bash
@@ -120,5 +126,5 @@ sudo systemctl stop grafana-server      # nếu muốn
 ## Lỗi thường gặp
 - **Spark báo thiếu driver Postgres** → kiểm `--jars /home/hduser/postgresql-42.7.3.jar` đúng đường dẫn.
 - **Grafana không kết nối Postgres** → kiểm pg_hba cho phép localhost md5; user erp/erp123 đúng.
-- **Dashboard trống** → producer chưa chạy, hoặc bảng rt_thongke chưa có dữ liệu (đợi vài batch 5s).
-- **Hết RAM** → tắt slave + YARH + NiFi (demo này chỉ cần Kafka+Postgres+Spark local+Grafana).
+- **Dashboard trống** → feeder chưa chạy / NiFi chưa Start nhánh PublishKafka, hoặc rt_thongke chưa có dữ liệu (đợi vài batch 5s).
+- **Hết RAM** → tắt slave + YARN (demo này cần Kafka+Postgres+NiFi+Spark local+Grafana).

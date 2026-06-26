@@ -1,4 +1,4 @@
-# Dữ liệu sinh/tải (tạo lại bằng prepare_from_kaggle.py)
+# Dữ liệu sinh LIVE bởi source_feeder.py (CRM json, file POS...) — artifact runtime
 data/
 
 # Spark / Hive artifacts
