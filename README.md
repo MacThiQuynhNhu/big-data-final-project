@@ -19,7 +19,7 @@ tích bằng **Spark SQL** và **Spark MLlib** trên cụm Hadoop 3 node.
 - **Nhánh tốc độ**: giao dịch đẩy qua Kafka → Spark Structured Streaming phát hiện đơn
   lỗ nặng và cảnh báo tức thì.
 
-Sơ đồ chi tiết: `kien_truc_lambda.svg` (xem `kien_truc_lambda.png`).
+Sơ đồ chi tiết: `kien_truc_chuan.svg` (xem `kien_truc_chuan.png`).
 
 ## Công nghệ
 
@@ -63,7 +63,7 @@ Dùng dataset **Superstore** (Kaggle, ~9994 giao dịch thật), tách thành 4 
 ├── HUONG_DAN_VM.md              # dựng cụm Hadoop 3 node trên VMware
 ├── HUONG_DAN_CHAY_BATCH.md      # runbook chạy luồng batch (clear + chạy lại từ đầu)
 ├── HUONG_DAN_DASHBOARD.md       # runbook dashboard real-time (Grafana)
-└── kien_truc_lambda.svg/.png    # sơ đồ kiến trúc
+└── kien_truc_chuan.svg/.png     # sơ đồ kiến trúc thống nhất (chuẩn)
 ```
 
 ## Cách chạy
