@@ -71,18 +71,16 @@ hdfs dfs -ls /lake/transactions /lake/inventory /clean/crm
 ✅ Đậu khi: `/lake/transactions` và `/lake/inventory` đều có file; Kafka offset > 0 và tăng dần.
 
 ## Bước 5 — Nạp Hive từ HDFS
-Chuyển sang giai đoạn phân tích: tắt NiFi/Kafka/API/feeder nhường RAM, bật YARN.
-**Giữ PostgreSQL bật** — `spark_to_hive` đọc bảng giá vốn `san_pham` qua JDBC.
+Chuyển sang giai đoạn phân tích: tắt NiFi/Kafka/API/feeder/Postgres nhường RAM, bật YARN.
+(`san_pham` ghi cố định trong code — batch KHÔNG cần Postgres/JDBC.)
 ```bash
 ~/nifi-1.28.1/bin/nifi.sh stop
 pkill -f "http.server 8000"; pkill -f source_feeder.py
 ~/kafka_2.13-3.7.1/bin/kafka-server-stop.sh          # batch không cần Kafka
-# KHÔNG tắt postgresql (cần cho JDBC đọc san_pham)
 
 start-yarn.sh
 cd ~/big-data-final-project
-spark-submit --master yarn --jars /home/hduser/postgresql-42.7.3.jar \
-  notebooks/spark_to_hive.py 2>&1 | tee ~/ketqua_hive.txt
+spark-submit --master yarn notebooks/spark_to_hive.py 2>&1 | tee ~/ketqua_hive.txt
 ```
 ✅ Đậu khi: `SHOW PARTITIONS` ra `source=pos/...`, `source=erp/...`, `source=ecommerce/...`;
 phần cuối in số bản ghi theo kênh (online/offline) và tồn kho tính từ chuyển động.

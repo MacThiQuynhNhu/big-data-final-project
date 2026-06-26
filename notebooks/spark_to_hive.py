@@ -58,10 +58,22 @@ spark.sql("CREATE DATABASE IF NOT EXISTS bao_cao")
       .partitionBy("source", "thang")
       .saveAsTable("bao_cao.sales_report"))
 
-# ---------- Danh mục sản phẩm + giá vốn (dim) đọc từ Postgres qua JDBC ----------
-PG_URL = "jdbc:postgresql://localhost:5432/erp"
-PG_PROPS = {"user": "erp", "password": "erp123", "driver": "org.postgresql.Driver"}
-sp = spark.read.jdbc(PG_URL, "san_pham", properties=PG_PROPS)   # product_id, ten_sp, unit_cost, reorder_level
+# ---------- Danh mục sản phẩm + giá vốn (dim) ----------
+# Ghi CỐ ĐỊNH trong code (KHỚP setup_db.sql) thay vì JDBC: trên YARN executor chạy ở slave,
+# 'localhost:5432' trỏ nhầm sang slave (Postgres chỉ ở master) -> JDBC fail. san_pham là dim
+# tĩnh nhỏ nên không cần đọc DB lúc batch.
+san_pham = [
+    ("TEC-CO-10004722", "Copier",      300.0, 30),
+    ("OFF-BI-10003527", "Binder",        8.0, 100),
+    ("FUR-CH-10002024", "Chair",       150.0, 20),
+    ("OFF-BI-10001359", "Binder Mini",   5.0, 100),
+    ("TEC-MA-10001127", "Machine",     200.0, 25),
+    ("OFF-SU-10000151", "Supplies",     10.0, 80),
+    ("FUR-BO-10001798", "Bookcase",    120.0, 15),
+    ("OFF-PA-10001970", "Paper",         6.0, 120),
+    ("TEC-AC-10002049", "Accessory",    40.0, 50),
+]
+sp = spark.createDataFrame(san_pham, ["product_id", "ten_sp", "unit_cost", "reorder_level"])
 sp.write.mode("overwrite").format("parquet").saveAsTable("bao_cao.dim_sanpham")
 
 # ---------- Tồn kho TỔNG: tính từ SỰ KIỆN chuyển động (event-sourcing, kho trung tâm) ----------
