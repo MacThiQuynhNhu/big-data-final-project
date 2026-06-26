@@ -1,6 +1,6 @@
 -- ============================================================
 -- Tạo các bảng NGUỒN + DIMENSION cho feeder (PostgreSQL, db "erp", user "erp")
--- Chạy: psql -U erp -d erp -f setup_db.sql
+-- Chạy: PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f setup_db.sql
 -- ============================================================
 
 -- DIMENSION: DANH MỤC SẢN PHẨM + GIÁ VỐN (nối KHO <-> TÀI CHÍNH)

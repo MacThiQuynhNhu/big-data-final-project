@@ -38,7 +38,7 @@ SQL
 ```bash
 pip3 install psycopg2-binary    # cho source_feeder
 ls ~/postgresql-42.7.3.jar      # driver Postgres cho Spark (đã tải lúc làm NiFi)
-psql -U erp -d erp -f ~/big-data-final-project/data_generator/setup_db.sql   # bảng nguồn
+PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f ~/big-data-final-project/data_generator/setup_db.sql   # bảng nguồn
 ```
 
 ## Bước 3 — Cài Grafana (1 lần)

@@ -296,7 +296,7 @@ cả 5 nguồn → NiFi → Kafka → HDFS `/lake` → Hive. Các job Spark (`sp
 ### 6.3 Chạy luồng batch trên YARN
 Theo `HUONG_DAN_CHAY_BATCH.md` (đầy đủ thứ tự bật service + thu thập + nạp Hive + báo cáo):
 ```bash
-psql -U erp -d erp -f data_generator/setup_db.sql        # bảng nguồn (1 lần)
+PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f data_generator/setup_db.sql   # bảng nguồn (1 lần)
 python3 data_generator/source_feeder.py &               # đổ dữ liệu live
 # ... NiFi thu thập → /lake ... rồi:
 spark-submit --master yarn --deploy-mode client notebooks/spark_to_hive.py

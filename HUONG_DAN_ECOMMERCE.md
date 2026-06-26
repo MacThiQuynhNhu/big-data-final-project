@@ -17,7 +17,7 @@ nguồn và bước đổi tên trường cho khớp schema chung.
 
 ```bash
 # tạo bảng (1 lần)
-psql -U erp -d erp -f data_generator/setup_db.sql
+PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f data_generator/setup_db.sql
 # chạy feeder để có đơn online đổ về liên tục
 python3 data_generator/source_feeder.py
 ```

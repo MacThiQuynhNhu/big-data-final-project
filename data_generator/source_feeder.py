@@ -19,7 +19,7 @@ Mô phỏng dữ liệu LIVE đổ về CẢ 5 NGUỒN (để NiFi ingest liên 
 
   GIÁ VỐN: bảng san_pham (product_id, unit_cost, reorder_level) -> nối KHO <-> TÀI CHÍNH.
 
-Tạo bảng trước: psql -U erp -d erp -f setup_db.sql
+Tạo bảng trước: PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f setup_db.sql
 Cài: pip3 install psycopg2-binary
 Chạy: python3 source_feeder.py        (Ctrl+C để dừng)
 """
@@ -52,7 +52,7 @@ cur = conn.cursor()
 cur.execute("SELECT product_id, unit_cost FROM san_pham")
 COST = {r[0]: float(r[1]) for r in cur.fetchall()}
 if not COST:
-    raise SystemExit("Bảng san_pham trống. Chạy: psql -U erp -d erp -f setup_db.sql")
+    raise SystemExit("Bảng san_pham trống. Chạy: PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f setup_db.sql")
 PRODUCTS = list(COST.keys())
 
 

@@ -28,7 +28,7 @@ nohup python3 -m http.server 8000 >~/crm_api.log 2>&1 &   # API cho CRM
 ~/nifi-1.28.1/bin/nifi.sh start                       # đợi ~2 phút
 
 # Tạo bảng nguồn (1 lần) + bật feeder sinh giao dịch LIVE
-psql -U erp -d erp -f ~/big-data-final-project/data_generator/setup_db.sql
+PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f ~/big-data-final-project/data_generator/setup_db.sql
 nohup python3 ~/big-data-final-project/data_generator/source_feeder.py >~/feeder.log 2>&1 &
 ```
 

@@ -91,7 +91,7 @@ live đổ về từng nguồn), dựa trên danh mục sản phẩm/cửa hàng
 ```bash
 cd data_generator
 pip3 install -r requirements.txt
-psql -U erp -d erp -f setup_db.sql   # tạo bảng nguồn (1 lần)
+PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f setup_db.sql   # tạo bảng nguồn (1 lần)
 python3 source_feeder.py             # đổ dữ liệu LIVE cho cả 5 nguồn (Ctrl+C để dừng)
 ```
 > Không còn nguồn tĩnh: mọi nguồn (POS file, ERP/Ecom/Kho database, CRM api) đều do
