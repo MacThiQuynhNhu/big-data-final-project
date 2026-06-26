@@ -1,6 +1,11 @@
 -- ============================================================
 -- Tạo các bảng NGUỒN + DIMENSION cho feeder (PostgreSQL, db "erp", user "erp")
 -- Chạy: PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f setup_db.sql
+--
+-- ⚠️ Nếu ĐÃ có bảng cũ (schema khác) -> CREATE IF NOT EXISTS sẽ BỎ QUA, thiếu cột mới.
+--    Khi đổi schema, XÓA bảng cũ trước (dữ liệu mô phỏng, feeder sinh lại):
+--    PGPASSWORD=erp123 psql -h localhost -U erp -d erp \
+--      -c "DROP TABLE IF EXISTS sales, ecommerce_orders, kho_chuyendong, san_pham CASCADE;"
 -- ============================================================
 
 -- DIMENSION: DANH MỤC SẢN PHẨM + GIÁ VỐN (nối KHO <-> TÀI CHÍNH)
