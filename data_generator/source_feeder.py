@@ -1,8 +1,10 @@
 """
 Mô phỏng giao dịch LIVE đổ về CÁC NGUỒN (để NiFi ingest liên tục → Kafka).
-Mỗi vòng sinh 1 lô giao dịch, ghi vào CẢ HAI nguồn (cùng txn_id để join được):
+Mỗi vòng sinh 1 lô giao dịch, ghi vào các nguồn (cùng txn_id để join được):
   - POS  -> file JSON nhỏ trong thư mục NiFi canh   (NiFi GetFile)
   - ERP  -> insert dòng vào PostgreSQL bảng sales    (NiFi QueryDatabaseTable incremental)
+  - KHO  -> sự kiện chuyển động (xuất khi bán, thỉnh thoảng nhập) vào bảng kho_chuyendong
+           (mô hình fact chuyển động kho; tồn kho = số dư chạy)
 
 Cài: pip3 install psycopg2-binary
 Chạy: python3 source_feeder.py        (Ctrl+C để dừng)
@@ -41,6 +43,8 @@ try:
         for _ in range(n):
             txn_id = f"LIVE{i:09d}"
             store, region = random.choice(STORES)
+            product = random.choice(PRODUCTS)
+            qty = random.randint(1, 10)
             revenue = round(random.uniform(50, 5000), 0)
             if random.random() < 0.15:
                 cost = round(revenue * random.uniform(1.1, 1.8), 0)   # lỗ
@@ -48,16 +52,26 @@ try:
                 cost = round(revenue * random.uniform(0.55, 0.9), 0)  # lãi
             # POS: tên cột "bẩn" (Doanh_Thu/Ngay) để NiFi ReplaceText làm sạch
             pos_batch.append({
-                "txn_id": txn_id, "store_id": store,
-                "product_id": random.choice(PRODUCTS),
-                "qty": random.randint(1, 10), "Doanh_Thu": revenue,
+                "txn_id": txn_id, "store_id": store, "product_id": product,
+                "qty": qty, "Doanh_Thu": revenue,
                 "promotion": random.randint(0, 1), "Ngay": today})
             # ERP: insert vào Postgres (cùng txn_id, có cost/region)
             cur.execute(
                 "INSERT INTO sales (txn_id, store_id, region, revenue, cost, txn_date) "
                 "VALUES (%s, %s, %s, %s, %s, %s)",
                 (txn_id, store, region, revenue, cost, today))
+            # KHO: bán hàng = XUẤT kho (qty âm)
+            cur.execute(
+                "INSERT INTO kho_chuyendong (store_id, product_id, loai, qty) "
+                "VALUES (%s, %s, 'xuat', %s)", (store, product, -qty))
             i += 1
+        # Mỗi lô: thỉnh thoảng NHẬP hàng (restock)
+        if random.random() < 0.5:
+            s, _ = random.choice(STORES)
+            cur.execute(
+                "INSERT INTO kho_chuyendong (store_id, product_id, loai, qty) "
+                "VALUES (%s, %s, 'nhap', %s)",
+                (s, random.choice(PRODUCTS), random.randint(50, 200)))
         # ghi 1 file POS cho cả lô
         with open(os.path.join(POS_DIR, f"pos_{ts}.json"), "w", encoding="utf-8") as f:
             json.dump(pos_batch, f, ensure_ascii=False)
