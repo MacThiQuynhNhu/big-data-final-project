@@ -22,7 +22,8 @@ PG_PROPS = {"user": "erp", "password": "erp123", "driver": "org.postgresql.Drive
 
 # Lấy tất cả mart bc_* trong database bao_cao + vài dim hữu ích cho dashboard
 tables = [r.tableName for r in spark.sql("SHOW TABLES IN bao_cao").collect()
-          if r.tableName.startswith("bc_") or r.tableName in ("inventory", "dim_khachhang")]
+          if r.tableName.startswith("bc_") or r.tableName.startswith("agg_")
+          or r.tableName in ("inventory", "dim_khachhang")]
 
 print(f">>> Đẩy {len(tables)} bảng sang PostgreSQL...")
 for t in tables:

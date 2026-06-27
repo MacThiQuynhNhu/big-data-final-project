@@ -21,10 +21,13 @@ spark-submit --master yarn $RES notebooks/spark_to_hive.py
 echo "--- [2/4] Báo cáo SQL (bc_*) ---"
 spark-submit --master yarn $RES notebooks/spark_report_hive.py
 
-echo "--- [3/4] MLlib: dự báo + phân cụm + kế hoạch nhập ---"
+echo "--- [3/5] MLlib: dự báo + phân cụm + kế hoạch nhập ---"
 spark-submit --master yarn $RES notebooks/spark_analysis.py
 
-echo "--- [4/4] Đẩy marts -> PostgreSQL (Grafana) ---"
+echo "--- [4/5] Incremental: tổng hợp ngày/tuần/tháng (chỉ kỳ mới đã đóng) ---"
+spark-submit --master yarn $RES notebooks/spark_incremental.py
+
+echo "--- [5/5] Đẩy marts -> PostgreSQL (Grafana) ---"
 spark-submit --master local[1] --driver-memory 512m --jars "$PG_JAR" notebooks/spark_marts_to_pg.py
 
 echo "=== [$(date '+%F %T')] XONG. Grafana batch đã có số mới. ==="
