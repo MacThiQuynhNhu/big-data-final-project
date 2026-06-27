@@ -76,8 +76,16 @@ def new_customer(n):
     return {"customer_id": f"CUST{n:04d}", "customer_name": f"Customer {n}",
             "segment": random.choice(SEGMENTS), "region": region}
 
-customers = [new_customer(k) for k in range(1, 51)]
-next_cust = 51
+# Resume danh sách khách từ file (nếu feeder từng chạy) -> restart KHÔNG reset về 50
+if os.path.exists(CRM_FILE):
+    try:
+        with open(CRM_FILE, encoding="utf-8") as f:
+            customers = json.load(f)
+        next_cust = max(int(c["customer_id"][4:]) for c in customers) + 1
+    except Exception:
+        customers = [new_customer(k) for k in range(1, 51)]; next_cust = 51
+else:
+    customers = [new_customer(k) for k in range(1, 51)]; next_cust = 51
 
 def write_crm():
     with open(CRM_FILE, "w", encoding="utf-8") as f:
@@ -116,9 +124,14 @@ if cur.fetchone()[0] == 0:
     print("  (đã seed tồn kho ban đầu cho kho tổng)")
 
 print(">>> Đổ dữ liệu LIVE: POS(api) + ERP(db) + ECOM(db) + KHO TỔNG(db) + CRM(api)... (Ctrl+C để dừng)")
-i = 0     # đếm DÒNG bán offline (line items)
-j = 0     # đếm đơn online
-inv = 0   # đếm hóa đơn offline
+# Resume bộ đếm từ DB -> restart feeder KHÔNG trùng txn_id (tránh Spark dedup xóa nhầm dữ liệu)
+def _resume(sql):
+    cur.execute(sql)
+    v = cur.fetchone()[0]
+    return (v + 1) if v is not None else 0
+i   = _resume("SELECT MAX(CAST(SUBSTRING(txn_id FROM 2) AS INTEGER)) FROM sales WHERE txn_id ~ '^L[0-9]+$'")
+inv = _resume("SELECT MAX(CAST(SUBSTRING(invoice_id FROM 4) AS INTEGER)) FROM sales WHERE invoice_id ~ '^INV[0-9]+$'")
+j   = _resume("SELECT MAX(CAST(SUBSTRING(order_id FROM 4) AS INTEGER)) FROM ecommerce_orders")
 try:
     while True:
         # ===== KÊNH OFFLINE: POS (HÓA ĐƠN qua API) + ERP (dòng vào db) =====
