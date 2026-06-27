@@ -16,8 +16,8 @@ hdfs dfsadmin -report | grep "Live datanodes" || true
 echo ">> [2] PostgreSQL + Grafana"
 sudo systemctl start postgresql grafana-server
 
-echo ">> [3] Kafka (heap 512m)"
-export KAFKA_HEAP_OPTS="-Xms512m -Xmx512m"
+echo ">> [3] Kafka (heap 768m)"
+export KAFKA_HEAP_OPTS="-Xms512m -Xmx768m"
 $KAFKA/bin/kafka-server-start.sh -daemon $KAFKA/config/kraft/server.properties
 sleep 15
 
