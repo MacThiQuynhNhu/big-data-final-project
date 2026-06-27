@@ -49,8 +49,10 @@ conn.autocommit = True
 cur = conn.cursor()
 
 # ----- GIÁ VỐN: nạp danh mục sản phẩm (cần chạy setup_db.sql trước) -----
-cur.execute("SELECT product_id, unit_cost FROM san_pham")
-COST = {r[0]: float(r[1]) for r in cur.fetchall()}
+cur.execute("SELECT product_id, unit_cost, reorder_level FROM san_pham")
+COST, REORDER = {}, {}
+for _pid, _uc, _rl in cur.fetchall():
+    COST[_pid] = float(_uc); REORDER[_pid] = int(_rl)
 if not COST:
     raise SystemExit("Bảng san_pham trống. Chạy: PGPASSWORD=erp123 psql -h localhost -U erp -d erp -f setup_db.sql")
 PRODUCTS = list(COST.keys())
@@ -103,11 +105,11 @@ def xuat_kho(product, qty):
         (product, -qty, round(qty * COST[product], 0)))
 
 
-# Seed TỒN KHO BAN ĐẦU vào KHO TỔNG (1 lần): mỗi sản phẩm nhập 1 lô lớn -> tồn bắt đầu DƯƠNG.
+# Seed TỒN KHO BAN ĐẦU vào KHO TỔNG (1 lần): tồn đầu = 2× ngưỡng (THẤP) để cầu sớm vượt cung.
 cur.execute("SELECT COUNT(*) FROM kho_chuyendong WHERE loai = 'nhap_dau'")
 if cur.fetchone()[0] == 0:
     for _p in PRODUCTS:
-        q = random.randint(800, 2000)
+        q = REORDER[_p] * 2
         cur.execute(
             "INSERT INTO kho_chuyendong (product_id, loai, qty, cost) VALUES (%s,'nhap_dau',%s,%s)",
             (_p, q, round(q * COST[_p], 0)))
@@ -179,13 +181,17 @@ try:
             xuat_kho(product, qty)                            # bán online -> xuất kho tổng
             j += 1
 
-        # ===== KHO TỔNG: thỉnh thoảng NHẬP hàng (restock từ nhà cung cấp) =====
-        if random.random() < 0.5:
-            product = random.choice(PRODUCTS)
-            q = random.randint(50, 200)
-            cur.execute(
-                "INSERT INTO kho_chuyendong (product_id, loai, qty, cost) VALUES (%s,'nhap',%s,%s)",
-                (product, q, round(q * COST[product], 0)))
+        # ===== KHO TỔNG: NHẬP BÙ PHẢN ỨNG — chỉ nhập SP đang DƯỚI ngưỡng (có độ trễ) =====
+        # 30% cơ hội/tick -> có ĐỘ TRỄ nên tại thời điểm chụp luôn có vài SP dưới ngưỡng
+        # -> cảnh báo tồn + kế hoạch nhập có số. Tồn được "ghìm" thấp quanh ngưỡng (không phình).
+        cur.execute("SELECT product_id, COALESCE(SUM(qty),0) FROM kho_chuyendong GROUP BY product_id")
+        ton = {r[0]: r[1] for r in cur.fetchall()}
+        for product in PRODUCTS:
+            if ton.get(product, 0) < REORDER[product] and random.random() < 0.3:
+                q = REORDER[product] * 2                  # nhập 1 lô = 2× ngưỡng
+                cur.execute(
+                    "INSERT INTO kho_chuyendong (product_id, loai, qty, cost) VALUES (%s,'nhap',%s,%s)",
+                    (product, q, round(q * COST[product], 0)))
 
         # ===== CRM: thỉnh thoảng có KHÁCH MỚI đăng ký =====
         new_cnt = 0
