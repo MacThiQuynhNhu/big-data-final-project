@@ -142,6 +142,20 @@ in_va_luu(spark.sql("""
     ORDER BY ngay_chot
 """), "bc_xuhuong_tonkho")
 
+# 10. CHUỖI THỜI GIAN kinh doanh theo NGÀY (có cột ngày thật) — để Grafana cuộn
+#     ngày→tuần→tháng→quý→năm + chọn khoảng thời gian (xem lại kỳ trước).
+print("== 10. Kinh doanh theo ngày (time-series cho Grafana) ==")
+in_va_luu(spark.sql("""
+    SELECT txn_date                          AS ngay,
+           ROUND(SUM(revenue), 0)            AS doanh_thu,
+           ROUND(SUM(revenue - cost), 0)     AS loi_nhuan,
+           COUNT(*)                          AS so_dong
+    FROM sales_report
+    WHERE source = 'erp' AND txn_date IS NOT NULL
+    GROUP BY txn_date
+    ORDER BY txn_date
+"""), "bc_kinhdoanh_ngay")
+
 print("== Các bảng báo cáo đã lưu trong Hive (database bao_cao) ==")
 spark.sql("SHOW TABLES IN bao_cao").show()
 
