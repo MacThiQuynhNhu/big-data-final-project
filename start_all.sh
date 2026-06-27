@@ -16,7 +16,8 @@ hdfs dfsadmin -report | grep "Live datanodes" || true
 echo ">> [2] PostgreSQL + Grafana"
 sudo systemctl start postgresql grafana-server
 
-echo ">> [3] Kafka"
+echo ">> [3] Kafka (heap 512m)"
+export KAFKA_HEAP_OPTS="-Xms512m -Xmx512m"
 $KAFKA/bin/kafka-server-start.sh -daemon $KAFKA/config/kraft/server.properties
 sleep 15
 
@@ -29,8 +30,8 @@ echo ">> [5] CRM API (cổng 8000)"
 echo ">> [6] Feeder (sinh dữ liệu live)"
 nohup python3 -u data_generator/source_feeder.py >~/feeder.log 2>&1 &
 
-echo ">> [7] Spark Streaming (nền) -> rt_* cho Grafana real-time"
-nohup spark-submit --master local[2] --driver-memory 1g \
+echo ">> [7] Spark Streaming (nền, nhẹ) -> rt_* cho Grafana real-time"
+nohup spark-submit --master local[1] --driver-memory 768m \
   --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.1 \
   --jars $PG_JAR notebooks/spark_stream_dashboard.py >~/streaming.log 2>&1 &
 

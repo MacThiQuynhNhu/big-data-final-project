@@ -64,10 +64,15 @@ def sale_price(unit_cost):
     return round(unit_cost * markup, 0)
 
 
+SIM_DAY_SECONDS = 180          # 1 NGÀY mô phỏng = 3 phút thật (chỉnh tỉ lệ ở đây)
+SIM_EPOCH = datetime(2026, 1, 1)
+
 def biz_date():
-    """Ngày giao dịch rải ~9 tháng gần nhất (lệch về gần đây) -> batch có lịch sử nhiều
-    tháng + xu hướng tăng cho dự báo. (Streaming dùng giờ xử lý nên không bị ảnh hưởng.)"""
-    return (datetime.now() - timedelta(days=int(random.triangular(0, 270, 0)))).strftime("%Y-%m-%d")
+    """Ngày mô phỏng TIẾN DẦN theo thời gian thật: mỗi SIM_DAY_SECONDS giây = 1 ngày mới.
+    -> để feeder chạy thì ngày/tuần/tháng MỚI tự xuất hiện (theo dõi xu hướng, xem kỳ mới).
+    Dựa trên wall-clock nên restart vẫn nối tiếp đúng (không reset về ngày 0)."""
+    sim_day = int(time.time() / SIM_DAY_SECONDS) % 365
+    return (SIM_EPOCH + timedelta(days=sim_day)).strftime("%Y-%m-%d")
 
 
 # ----- CRM: danh sách khách hàng (dimension động, feeder sở hữu) -----
