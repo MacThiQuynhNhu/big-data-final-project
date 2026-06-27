@@ -7,8 +7,8 @@
 set -e
 cd "$(dirname "$0")"
 PG_JAR=/home/hduser/postgresql-42.7.3.jar
-# RAM NHỎ để chạy chung với streaming + NiFi (đừng tranh hết RAM của VM)
-RES="--driver-memory 512m --executor-memory 1g --num-executors 2 --executor-cores 1"
+# RAM NHỎ để chạy chung streaming + NiFi, và vừa slave 2GB (executor 640m + overhead ~1GB)
+RES="--driver-memory 512m --executor-memory 640m --num-executors 2 --executor-cores 1"
 
 # Khóa: nếu lần batch trước CHƯA xong thì BỎ lần này (tránh 2 batch chồng nhau)
 exec 9>/tmp/run_batch.lock
