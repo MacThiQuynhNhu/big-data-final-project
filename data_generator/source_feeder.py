@@ -65,7 +65,7 @@ def sale_price(unit_cost):
 
 
 SIM_DAY_SECONDS = 180          # 1 NGÀY mô phỏng = 3 phút thật (chỉnh tỉ lệ ở đây)
-SIM_EPOCH = datetime(2026, 1, 1)
+SIM_EPOCH = datetime(2026, 7, 1)   # ngày mới tiến dần TỪ đây (ngay sau dữ liệu cũ ~27/6) -> timeline liền mạch
 ANCHOR_FILE = os.path.join(os.path.dirname(CRM_FILE), ".sim_anchor")
 # Mốc thật lúc mô phỏng BẮT ĐẦU (lưu file -> restart vẫn nối tiếp đúng;
 # XÓA data/.sim_anchor = bắt đầu lại từ ngày 2026-01-01).
