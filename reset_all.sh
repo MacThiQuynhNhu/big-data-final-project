@@ -36,6 +36,10 @@ hdfs dfs -chmod -R 777 /lake /clean
 echo ">> [5] Xóa toàn bộ báo cáo Hive (database bao_cao) -> build lại sạch"
 spark-sql --master local[1] -e "DROP DATABASE IF EXISTS bao_cao CASCADE;" 2>/dev/null \
   || echo "   (spark-sql lỗi -> thử: hive -e \"DROP DATABASE IF EXISTS bao_cao CASCADE;\")"
+# Safeguard: xóa thẳng HDFS warehouse để CHẮC sạch. agg_* ghi APPEND -> nếu DROP lỗi ngầm mà
+# data cũ còn sót, lần batch sau sẽ trùng kỳ (phá vỡ "mỗi kỳ tính đúng 1 lần").
+hdfs dfs -rm -r -f /user/hive/warehouse/bao_cao.db 2>/dev/null \
+  || echo "   (warehouse dir đã sạch/không có -> OK)"
 
 echo ">> [6] Xóa checkpoint streaming"
 rm -rf ~/chk_dashboard ~/chk_alert
