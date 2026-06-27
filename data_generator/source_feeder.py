@@ -96,14 +96,16 @@ write_crm()
 # ----- POS: máy bán hàng chi nhánh PUSH hóa đơn lên API trung tâm (NiFi ListenHTTP) -----
 def post_pos(invoice):
     data = json.dumps(invoice, ensure_ascii=False).encode("utf-8")
-    req = urllib.request.Request(
-        POS_API, data=data,
-        headers={"Content-Type": "application/json"}, method="POST")
-    try:
-        urllib.request.urlopen(req, timeout=3)
-        return True
-    except Exception:
-        return False                     # NiFi ListenHTTP chưa bật -> bỏ qua hóa đơn này
+    for _ in range(2):                   # thử lại 1 lần nếu NiFi đang bận (back-pressure)
+        req = urllib.request.Request(
+            POS_API, data=data,
+            headers={"Content-Type": "application/json"}, method="POST")
+        try:
+            urllib.request.urlopen(req, timeout=8)
+            return True
+        except Exception:
+            time.sleep(0.3)              # đợi chút rồi thử lại
+    return False                         # vẫn lỗi -> bỏ qua hóa đơn này
 
 
 def xuat_kho(product, qty):
@@ -218,8 +220,8 @@ try:
         print(f"  offline {n} dòng / {len(active_stores)} hóa đơn (tổng {inv} HĐ) | "
               f"online {m} (tổng {j}) | khách {len(customers)}"
               + (" (+1 mới)" if new_cnt else "") + warn)
-        # Nhịp LÚC NHANH LÚC CHẬM (mô phỏng giờ cao điểm/vắng) — nhanh hơn để đỡ đợi data
-        time.sleep(random.uniform(0.3, 1.0) if random.random() < 0.8 else random.uniform(1.5, 3.5))
+        # Nhịp LÚC NHANH LÚC CHẬM (mô phỏng giờ cao điểm/vắng) — nhanh hơn gốc ~3x, đỡ nghẽn NiFi
+        time.sleep(random.uniform(0.6, 1.5) if random.random() < 0.8 else random.uniform(2.0, 4.0))
 except KeyboardInterrupt:
     cur.close()
     conn.close()
