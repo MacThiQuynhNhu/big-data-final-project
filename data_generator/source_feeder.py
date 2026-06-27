@@ -66,12 +66,21 @@ def sale_price(unit_cost):
 
 SIM_DAY_SECONDS = 180          # 1 NGÀY mô phỏng = 3 phút thật (chỉnh tỉ lệ ở đây)
 SIM_EPOCH = datetime(2026, 1, 1)
+ANCHOR_FILE = os.path.join(os.path.dirname(CRM_FILE), ".sim_anchor")
+# Mốc thật lúc mô phỏng BẮT ĐẦU (lưu file -> restart vẫn nối tiếp đúng;
+# XÓA data/.sim_anchor = bắt đầu lại từ ngày 2026-01-01).
+if os.path.exists(ANCHOR_FILE):
+    with open(ANCHOR_FILE) as _f:
+        REAL_ANCHOR = float(_f.read().strip())
+else:
+    REAL_ANCHOR = time.time()
+    with open(ANCHOR_FILE, "w") as _f:
+        _f.write(str(REAL_ANCHOR))
 
 def biz_date():
-    """Ngày mô phỏng TIẾN DẦN theo thời gian thật: mỗi SIM_DAY_SECONDS giây = 1 ngày mới.
-    -> để feeder chạy thì ngày/tuần/tháng MỚI tự xuất hiện (theo dõi xu hướng, xem kỳ mới).
-    Dựa trên wall-clock nên restart vẫn nối tiếp đúng (không reset về ngày 0)."""
-    sim_day = int(time.time() / SIM_DAY_SECONDS) % 365
+    """Ngày mô phỏng TIẾN DẦN từ SIM_EPOCH: mỗi SIM_DAY_SECONDS giây thật = 1 ngày.
+    -> để feeder chạy thì ngày/tuần/tháng MỚI tự xuất hiện (theo dõi xu hướng, xem kỳ mới)."""
+    sim_day = int((time.time() - REAL_ANCHOR) / SIM_DAY_SECONDS)
     return (SIM_EPOCH + timedelta(days=sim_day)).strftime("%Y-%m-%d")
 
 
