@@ -181,14 +181,15 @@ try:
             xuat_kho(product, qty)                            # bán online -> xuất kho tổng
             j += 1
 
-        # ===== KHO TỔNG: NHẬP BÙ PHẢN ỨNG — chỉ nhập SP đang DƯỚI ngưỡng (có độ trễ) =====
-        # 30% cơ hội/tick -> có ĐỘ TRỄ nên tại thời điểm chụp luôn có vài SP dưới ngưỡng
-        # -> cảnh báo tồn + kế hoạch nhập có số. Tồn được "ghìm" thấp quanh ngưỡng (không phình).
+        # ===== KHO TỔNG: NHẬP BÙ — ÍT LẦN nhưng mỗi lần LÔ LỚN (đặt hàng số lượng) =====
+        # Bán diễn ra liên tục từng đơn nhỏ; nhập thì THƯA (20% khi dưới ngưỡng) + 1 lô LỚN
+        # (4× ngưỡng) -> chuyển động kho CHẬM hơn giao dịch, đúng nghiệp vụ. Độ trễ này khiến
+        # tại thời điểm chụp luôn có vài SP dưới ngưỡng -> cảnh báo + kế hoạch nhập có số.
         cur.execute("SELECT product_id, COALESCE(SUM(qty),0) FROM kho_chuyendong GROUP BY product_id")
         ton = {r[0]: r[1] for r in cur.fetchall()}
         for product in PRODUCTS:
-            if ton.get(product, 0) < REORDER[product] and random.random() < 0.3:
-                q = REORDER[product] * 2                  # nhập 1 lô = 2× ngưỡng
+            if ton.get(product, 0) < REORDER[product] and random.random() < 0.2:
+                q = REORDER[product] * 4                  # 1 lô LỚN (bulk purchase)
                 cur.execute(
                     "INSERT INTO kho_chuyendong (product_id, loai, qty, cost) VALUES (%s,'nhap',%s,%s)",
                     (product, q, round(q * COST[product], 0)))
@@ -204,7 +205,8 @@ try:
         print(f"  offline {n} dòng / {len(active_stores)} hóa đơn (tổng {inv} HĐ) | "
               f"online {m} (tổng {j}) | khách {len(customers)}"
               + (" (+1 mới)" if new_cnt else "") + warn)
-        time.sleep(random.uniform(3, 6))
+        # Nhịp LÚC NHANH LÚC CHẬM (mô phỏng giờ cao điểm/vắng) — nhanh hơn để đỡ đợi data
+        time.sleep(random.uniform(0.3, 1.0) if random.random() < 0.8 else random.uniform(1.5, 3.5))
 except KeyboardInterrupt:
     cur.close()
     conn.close()
