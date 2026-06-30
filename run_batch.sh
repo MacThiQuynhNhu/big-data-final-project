@@ -27,8 +27,7 @@ FAILED=""
 echo "=== [$(date '+%F %T')] BẮT ĐẦU batch ==="
 
 # [1/5] CRITICAL — nạp Hive. Hỏng -> dừng cả batch (mọi bước sau phụ thuộc sales_report).
-# LƯU Ý: spark_to_hive đọc TOÀN BỘ /lake/transactions mỗi lần (full rebuild, có dropDuplicates -> idempotent).
-#   Đủ nhanh cho demo. Nếu chạy DÀI NGÀY khiến 1 lần batch > 15' thì archive bớt file /lake cũ (xem README/plan).
+# INCREMENTAL: chỉ ingest file MỚI từ /lake/transactions, APPEND vào sales_report, archive file cũ.
 echo "--- [1/5] Nạp Hive (sales_report, inventory, dim, snapshot) ---"
 spark-submit --master yarn $RES notebooks/spark_to_hive.py || {
   echo "[$(date '+%F %T')] FATAL: spark_to_hive lỗi -> hủy batch." >&2; exit 1; }
@@ -52,6 +51,10 @@ spark-submit --master yarn $RES notebooks/spark_analysis.py || {
 echo "--- [5/5] Đẩy marts -> PostgreSQL (Grafana) ---"
 spark-submit --master local[1] --driver-memory 512m --jars "$PG_JAR" notebooks/spark_marts_to_pg.py || {
   echo "[$(date '+%F %T')] ERROR: spark_marts_to_pg lỗi." >&2; FAILED="$FAILED marts"; }
+
+# Dọn log định kỳ: giữ 200 dòng cuối, tránh đầy disk root (chỉ 29GB, đang 89%)
+tail -200 ~/streaming.log > /tmp/streaming.log.tmp 2>/dev/null && mv /tmp/streaming.log.tmp ~/streaming.log
+tail -200 ~/feeder.log > /tmp/feeder.log.tmp 2>/dev/null && mv /tmp/feeder.log.tmp ~/feeder.log
 
 if [ -n "$FAILED" ]; then
   echo "=== [$(date '+%F %T')] XONG (có lỗi:$FAILED) ==="; exit 1

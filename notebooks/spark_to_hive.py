@@ -5,9 +5,14 @@ NHÁNH BATCH (thống nhất): đọc GIAO DỊCH từ /lake/transactions
 
 Tồn kho tính từ SỰ KIỆN chuyển động (/lake/inventory), KHÔNG dùng Excel tĩnh.
 
+INCREMENTAL INGEST: mỗi lần batch chỉ đọc file MỚI trong /lake/transactions,
+APPEND vào sales_report rồi move file đã xử lý sang archive. sales_report tích
+luỹ toàn bộ lịch sử, không bao giờ bị mất data cũ.
+
 Chạy (cần HDFS + YARN):
   spark-submit --master yarn --deploy-mode client notebooks/spark_to_hive.py
 """
+import subprocess
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
@@ -21,42 +26,59 @@ spark.sparkContext.setLogLevel("WARN")
 HDFS = "hdfs://master:9000"
 
 # ---------- Giao dịch: đọc từ HDFS landing (Kafka → ConsumeKafka → HDFS) ----------
-# Định dạng JSON Lines (mỗi dòng 1 giao dịch), bản ghi đã có sẵn cột 'source'
-tx = spark.read.json(f"{HDFS}/lake/transactions")
-tx = tx.dropDuplicates(["source", "txn_id"])
+# CHỈ đọc file hiện có trong /lake/transactions (file cũ đã được archive ở lần trước).
+# NiFi/feeder đổ file mới vào đây liên tục → mỗi batch chỉ ingest phần chưa xử lý.
+try:
+    tx = spark.read.json(f"{HDFS}/lake/transactions")
+except Exception:
+    print("Không có giao dịch mới -> bỏ qua.")
+    tx = None
 
-# 3 nguồn bán hàng (POS/ERP/ECOMMERCE) khác trường nhau -> thiếu cột nào thì thêm null
-for col_name, col_type in [("txn_id", "string"), ("invoice_id", "string"),
-                           ("store_id", "string"), ("product_id", "string"),
-                           ("region", "string"), ("qty", "int"),
-                           ("revenue", "double"), ("cost", "double"),
-                           ("promotion", "int"), ("kenh", "string"),
-                           ("txn_date", "string"), ("customer_id", "string"),
-                           ("device", "string"), ("payment_method", "string"),
-                           ("source", "string")]:
-    if col_name not in tx.columns:
-        tx = tx.withColumn(col_name, F.lit(None).cast(col_type))
+if tx is None or tx.rdd.isEmpty():
+    print("Không có giao dịch mới -> bỏ qua.")
+else:
+    tx = tx.dropDuplicates(["source", "txn_id"])
 
-# kenh (channel): ERP đã có sẵn (offline/online cho cả 2 kênh); POS/ecom suy ra để dự phòng
-sales = (tx.select("txn_id", "invoice_id", "store_id", "product_id", "region",
-                   F.col("qty").cast("int"),
-                   F.col("revenue").cast("double"),
-                   F.col("cost").cast("double"),
-                   F.col("promotion").cast("int"), "kenh",
-                   "customer_id", "device", "payment_method",
-                   F.to_date("txn_date").alias("txn_date"),
-                   "source")
-         .where(F.col("source").isNotNull() & F.col("txn_id").isNotNull())
-         .withColumn("kenh",
-                     F.coalesce(F.col("kenh"),
-                                F.when(F.col("source") == "ecommerce", F.lit("online"))
-                                 .when(F.col("source") == "pos", F.lit("offline"))))
-         .withColumn("thang", F.month("txn_date")))
+    # 3 nguồn bán hàng (POS/ERP/ECOMMERCE) khác trường nhau -> thiếu cột nào thì thêm null
+    for col_name, col_type in [("txn_id", "string"), ("invoice_id", "string"),
+                               ("store_id", "string"), ("product_id", "string"),
+                               ("region", "string"), ("qty", "int"),
+                               ("revenue", "double"), ("cost", "double"),
+                               ("promotion", "int"), ("kenh", "string"),
+                               ("txn_date", "string"), ("customer_id", "string"),
+                               ("device", "string"), ("payment_method", "string"),
+                               ("source", "string")]:
+        if col_name not in tx.columns:
+            tx = tx.withColumn(col_name, F.lit(None).cast(col_type))
 
-spark.sql("CREATE DATABASE IF NOT EXISTS bao_cao")
-(sales.write.mode("overwrite").format("parquet")
-      .partitionBy("source", "thang")
-      .saveAsTable("bao_cao.sales_report"))
+    # kenh (channel): ERP đã có sẵn (offline/online cho cả 2 kênh); POS/ecom suy ra để dự phòng
+    sales = (tx.select("txn_id", "invoice_id", "store_id", "product_id", "region",
+                       F.col("qty").cast("int"),
+                       F.col("revenue").cast("double"),
+                       F.col("cost").cast("double"),
+                       F.col("promotion").cast("int"), "kenh",
+                       "customer_id", "device", "payment_method",
+                       F.to_date("txn_date").alias("txn_date"),
+                       "source")
+             .where(F.col("source").isNotNull() & F.col("txn_id").isNotNull())
+             .withColumn("kenh",
+                         F.coalesce(F.col("kenh"),
+                                    F.when(F.col("source") == "ecommerce", F.lit("online"))
+                                     .when(F.col("source") == "pos", F.lit("offline"))))
+             .withColumn("thang", F.month("txn_date")))
+
+    spark.sql("CREATE DATABASE IF NOT EXISTS bao_cao")
+    # APPEND thay vì OVERWRITE: sales_report tích luỹ toàn bộ lịch sử, không mất data cũ.
+    # Lần đầu chưa có bảng -> dùng overwrite; các lần sau -> append (có dropDuplicates chống trùng).
+    has_sales = "sales_report" in [t.name for t in spark.catalog.listTables("bao_cao")]
+    (sales.write.mode("append" if has_sales else "overwrite").format("parquet")
+          .partitionBy("source", "thang")
+          .saveAsTable("bao_cao.sales_report"))
+
+    # Archive: move file đã xử lý sang archive -> lần batch sau chỉ đọc file mới.
+    subprocess.check_call(["hdfs", "dfs", "-mkdir", "-p", f"{HDFS}/lake/transactions_archive"])
+    subprocess.check_call(["hdfs", "dfs", "-mv", f"{HDFS}/lake/transactions/*", f"{HDFS}/lake/transactions_archive/"])
+    print("   -> Đã ingest + archive file mới.")
 
 # ---------- Danh mục sản phẩm + giá vốn (dim) ----------
 # Ghi CỐ ĐỊNH trong code (KHỚP setup_db.sql) thay vì JDBC: trên YARN executor chạy ở slave,
